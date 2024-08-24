@@ -213,9 +213,10 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     if !wallet_path.exists() {
         tracing::error!("Failed to load wallet at: {}", wallet_path_str);
-        return Err("Failed to find wallet path.".into());
+        return Err(format!("Failed to find wallet path: {}", wallet_path_str).into());
     }
 
+    info!("loading wallet...");
     let wallet = read_keypair_file(wallet_path)
         .expect("Failed to load keypair from file: {wallet_path_str}");
     info!("loaded wallet {}", wallet.pubkey().to_string());
@@ -224,10 +225,10 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let rpc_client = RpcClient::new_with_commitment(rpc_url, CommitmentConfig::confirmed());
 
     info!("loading sol balance...");
-    let balance = if let Ok(balance) = rpc_client.get_balance(&wallet.pubkey()).await {
+    let balance: u64 = if let Ok(balance) = rpc_client.get_balance(&wallet.pubkey()).await {
         balance
     } else {
-        return Err("Failed to load balance".into());
+        return Err(format!("Failed to load balance for pubkey: {}", wallet.pubkey()).into());
     };
 
     info!("Balance: {:.2}", balance as f64 / LAMPORTS_PER_SOL as f64);
@@ -281,7 +282,6 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let db_pool = app_database
         .get_pool_by_authority_pubkey(wallet.pubkey().to_string())
         .await;
-
     match db_pool {
         Ok(_) => {}
         Err(AppDatabaseError::FailedToGetConnectionFromPool) => {

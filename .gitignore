@@ -1,7 +1,6 @@
 /target
-
+/secrets
 .env
-
 whitelist.txt
-
 /logs
+.DS_Store
